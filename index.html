@@ -107,7 +107,7 @@ table{width:100%;border-collapse:collapse;font-size:.82rem}th,td{border:1px soli
 </div>
 <script>
 /* ====== LINK DATABASE (Apps Script) — tetap memakai link Anda ====== */
-const API_URL='https://script.google.com/macros/s/AKfycbyuHExFFi4XB0ARzUi7TSoMTrhgtnGxndZ0T7GwiTUvnF5Jmw7fho_ikN_WW0QIysOu/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbzVD58uGEGt3PVyLF4Fk6d3MO74jNcYB75mO7SORIZfZClq2fCN1liUOqfWfpLAK7--/exec';
 // POST bertipe text/plain agar tidak memicu preflight CORS
 const api=async(fn,...args)=>{
   const r=await fetch(API_URL,{method:'POST',body:JSON.stringify({fn,args})});
