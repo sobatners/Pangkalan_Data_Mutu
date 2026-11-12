@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pangkalan Data Mutu</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root{--ink:#2e2a4f;--pri:#7c6fc4;--pri2:#4f9fc4}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:linear-gradient(135deg,#E6E6FA,#9CDCEC) fixed;color:var(--ink);min-height:100vh}
+.wrap{max-width:1400px;margin:0 auto;padding:20px}
+.narrow{max-width:1000px;margin:0 auto}
+.card{background:rgba(255,255,255,.75);backdrop-filter:blur(10px);border-radius:20px;padding:20px;box-shadow:0 8px 30px rgba(124,111,196,.18);margin-bottom:18px}
+h1{margin:0 0 4px;font-size:1.6rem}h2{margin:0 0 12px;font-size:1.1rem}
+.muted{color:#6b6790;font-size:.9rem}
+input,select,textarea{width:100%;padding:10px;border:1px solid #cfc9ee;border-radius:10px;background:#fff;font:inherit;margin-top:4px}
+label{font-size:.85rem;font-weight:600}
+.btn{background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;border:0;border-radius:12px;padding:10px 18px;cursor:pointer;font:inherit;font-weight:600}
+.btn.alt{background:#fff;color:var(--pri);border:1px solid var(--pri)}
+.btn:disabled{opacity:.6}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.bar{height:12px;border-radius:8px;background:#e4e0f7;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--pri),var(--pri2))}
+.chip{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.75rem;margin:2px;background:#fff3cd}.chip.late{background:#ffd6d6}
+.ban{padding:10px 14px;border-radius:12px;margin-bottom:8px;background:#fff3cd}.ban.late{background:#ffd6d6}.ban.ok{background:#d9f5e5}
+table{width:100%;border-collapse:collapse;font-size:.82rem}th,td{border:1px solid #bdb7e0;padding:6px;text-align:left;vertical-align:top}th{background:#E6E6FA}
+.top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:12px;display:none;z-index:99}
+[hidden]{display:none!important}
+
+/* PANEL LOGIN: 8 kolom ke samping, lalu turun ke bawah sesuai jumlah unit */
+.panels{display:grid;gap:12px;grid-template-columns:repeat(8,1fr)}
+@media(max-width:1200px){.panels{grid-template-columns:repeat(6,1fr)}}
+@media(max-width:900px){.panels{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:600px){.panels{grid-template-columns:repeat(2,1fr)}}
+.pn{border:0;border-radius:16px;padding:12px 10px;min-height:128px;color:#fff;text-align:left;cursor:pointer;font:inherit;
+  display:flex;flex-direction:column;justify-content:space-between;background:var(--c);box-shadow:0 4px 14px rgba(0,0,0,.15);
+  transition:transform .15s,box-shadow .15s;position:relative;overflow:hidden}
+.pn:hover,.pn:focus-visible{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.25);outline:3px solid #fff}
+.pn .ic{position:absolute;right:-6px;top:-10px;font-size:3.2rem;opacity:.28;line-height:1}
+.pn b{font-size:1.05rem}.pn span{font-size:.72rem;line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.pn small{font-size:.68rem;background:rgba(255,255,255,.25);border-radius:99px;padding:1px 8px;align-self:flex-start}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin:0 0 14px}
+#modal{position:fixed;inset:0;background:rgba(46,42,79,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+#mbox{background:#fff;border-radius:20px;padding:22px;width:100%;max-width:380px;border-top:10px solid var(--c)}
+</style></head><body><div class="wrap">
+
+<!-- LOGIN -->
+<div id="login" class="card">
+  <div class="top" style="margin-bottom:12px"><div><h1>Pangkalan Data Mutu</h1><span class="muted">Pilih panel unit/indikator Anda untuk masuk</span></div>
+    <button class="btn alt" onclick="showKep()">Kepatuhan pelaporan</button></div>
+  <div class="legend muted"><span>🏥 INM</span><span>🛡️ IMPRS</span><span>📊 IMPU</span></div>
+  <div class="panels" id="panels"><p class="muted">Memuat daftar unit…</p></div>
+</div>
+
+<!-- MODAL KODE -->
+<div id="modal" hidden onclick="if(event.target===this)closeM()">
+  <div id="mbox">
+    <h2 id="mJudul" style="margin-bottom:2px"></h2><p class="muted" id="mSub" style="margin-top:0"></p>
+    <label>Kode</label><input id="kode" type="password" placeholder="Kode unit" onkeydown="if(event.key==='Enter')doLogin()">
+    <p><button class="btn" id="bLogin" onclick="doLogin()">Masuk</button> <button class="btn alt" onclick="closeM()">Batal</button></p>
+  </div>
+</div>
+
+<!-- KEPATUHAN -->
+<div id="kep" class="narrow" hidden>
+  <div class="card top"><div><h1>Kepatuhan Pelaporan</h1><span class="muted" id="kepSub"></span></div><button class="btn alt" onclick="back()">← Kembali</button></div>
+  <div class="grid" id="kepSum"></div><div class="card" id="kepList" style="margin-top:18px"></div>
+</div>
+
+<!-- APP -->
+<div id="app" class="narrow" hidden>
+  <div class="card top"><div><h1 id="hJudul"></h1><span class="muted" id="hSub"></span></div>
+    <div><button class="btn alt" onclick="pdf()">⬇ Unduh PDF</button> <button class="btn alt" onclick="back()">Keluar</button></div></div>
+  <div id="ban"></div>
+  <div class="card top" style="padding:12px 20px"><b>Tampilan grafik &amp; laporan</b>
+    <select id="per" style="width:auto;margin:0" onchange="renderAll()">
+      <option value="all">Setahun (Jan–Des)</option>
+      <option value="t1">Triwulan I (Jan–Mar)</option><option value="t2">Triwulan II (Apr–Jun)</option>
+      <option value="t3">Triwulan III (Jul–Sep)</option><option value="t4">Triwulan IV (Okt–Des)</option>
+      <option value="s1">Semester 1 (Jan–Jun)</option><option value="s2">Semester 2 (Jul–Des)</option>
+    </select></div>
+  <div class="card" id="report">
+    <h2 id="rJudul" style="text-align:center;font-size:1.3rem"></h2>
+    <div style="position:relative;height:300px;width:100%"><canvas id="cv"></canvas></div>
+    <table id="rTab" style="margin-top:14px"></table>
+    <table id="rTri" style="margin-top:10px"></table>
+  </div>
+  <div class="card"><h2>Input bulanan</h2>
+    <div class="grid">
+      <div><label>Bulan</label><select id="fBln" onchange="loadForm()"></select></div>
+      <div><label>Numerator</label><input id="fNum" type="number" min="0" oninput="prev()"></div>
+      <div><label>Denominator</label><input id="fDen" type="number" min="1" oninput="prev()"></div>
+      <div><label>Capaian</label><input id="fCap" disabled></div>
+    </div>
+    <div class="grid" style="margin-top:12px">
+      <div><label>Analisa</label><textarea id="fAn" rows="4"></textarea></div>
+      <div><label>Rencana tindak lanjut</label><textarea id="fRtl" rows="4"></textarea></div>
+    </div>
+    <p><label><input type="checkbox" id="fPeng" style="width:auto"> Validasi pengumpul data</label>
+    &nbsp; <label><input type="checkbox" id="fPj" style="width:auto"> Validasi PJ unit</label></p>
+    <button class="btn" id="bSave" onclick="save()">Simpan</button>
+  </div>
+  <div class="card"><h2>Analisa triwulan (AI)</h2><div class="grid" id="tri"></div></div>
+</div>
+<div id="toast"></div>
+</div>
+<script>
+/* ====== LINK DATABASE (Apps Script) — tetap memakai link Anda ====== */
+const API_URL='https://script.google.com/macros/s/AKfycbyuHExFFi4XB0ARzUi7TSoMTrhgtnGxndZ0T7GwiTUvnF5Jmw7fho_ikN_WW0QIysOu/exec';
+// POST bertipe text/plain agar tidak memicu preflight CORS
+const api=async(fn,...args)=>{
+  const r=await fetch(API_URL,{method:'POST',body:JSON.stringify({fn,args})});
+  const j=await r.json();if(!j.ok)throw new Error(j.error);return j.data};
+
+const BLN=['Jan','Feb','Maret','April','Mei','Juni','Juli','Agsts','Sept','Okt','Nov','Des'];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const filled=r=>r.num!==''&&r.denum!==''&&r.denum>0;
+const cap=r=>filled(r)?Math.round(r.num/r.denum*1000)/10:null;
+const dl=(T,m)=>new Date(T,m+1,10,23,59,59);
+const expected=T=>{const n=new Date(),y=n.getFullYear();return y>T?12:y<T?0:n.getMonth()};
+const fmt=d=>d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+let S={},chart,pick=null;
+const PERS={all:[0,12,'Januari–Desember'],t1:[0,3,'Triwulan I'],t2:[3,6,'Triwulan II'],t3:[6,9,'Triwulan III'],t4:[9,12,'Triwulan IV'],s1:[0,6,'Semester 1'],s2:[6,12,'Semester 2']};
+const IKON={INM:'🏥',IMPRS:'🛡️',IMPU:'📊'};
+function toast(m){m=m&&m.message||m;const t=$('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',3600)}
+function show(id){['login','kep','app'].forEach(x=>$(x).hidden=x!==id)}
+function back(){S={};$('kode').value='';closeM();show('login')}
+function closeM(){$('modal').hidden=true}
+
+/* ====== PANEL: warna unik per unit (rainbow berdasar urutan) ====== */
+let UNITS=[];
+function loadUnits(){
+  api('listUnits').then(u=>{UNITS=u;
+    $('panels').innerHTML=u.map((x,i)=>{const h=Math.round(i/u.length*330);
+      return `<button class="pn" style="--c:hsl(${h} 58% 42%)" onclick="openM(${i})" title="${esc(x.j)}">
+        <i class="ic">${IKON[x.k]||'📁'}</i><small>${x.k}</small><b>${x.n}</b><span>${esc(x.j)}</span></button>`}).join('')})
+  .catch(e=>{$('panels').innerHTML='<p>Gagal memuat unit. <a href="#" onclick="loadUnits();return false">Coba lagi</a></p>';toast(e)})}
+function openM(i){pick=UNITS[i];const h=Math.round(i/UNITS.length*330);
+  $('mbox').style.setProperty('--c',`hsl(${h} 58% 42%)`);
+  $('mJudul').textContent=pick.n;$('mSub').textContent=pick.j;$('kode').value='';$('modal').hidden=false;setTimeout(()=>$('kode').focus(),50)}
+loadUnits();
+
+async function doLogin(){const b=$('bLogin');b.disabled=true;
+  try{const unit=pick.n,kode=$('kode').value;const d=await api('login',unit,kode);S={unit,kode,d};
+    closeM();show('app');$('fBln').innerHTML=BLN.map((b,i)=>`<option value="${i}">${b}</option>`).join('');
+    const e=expected(d.tahun),first=d.rows.findIndex((r,i)=>i<e&&!filled(r));$('fBln').value=first>=0?first:Math.max(0,e-1);
+    renderAll();renderTri();loadForm()}catch(e){toast(e)}b.disabled=false}
+
+function renderAll(){const d=S.d,T=d.tahun;
+  $('hJudul').textContent=d.judul;const [a,b,pl]=PERS[$('per').value];$('rJudul').textContent=d.judul+(a||b<12?' — '+pl+' '+T:'');
+  $('hSub').textContent=`${S.unit} • PIC: ${d.pic||'-'} • Tahun ${T}`;
+  const e=expected(T),now=new Date(),miss=d.rows.map((r,m)=>({r,m})).filter(x=>x.m<e&&!filled(x.r));
+  $('ban').innerHTML=miss.length?miss.map(({m})=>{const b=dl(T,m),late=now>b,days=Math.ceil((b-now)/864e5);
+    return `<div class="ban ${late?'late':''}">${late?'⚠️ TERLAMBAT':'⏰'} Laporan ${BLN[m]}: batas ${fmt(b)}${late?'':` (sisa ${days} hari)`}</div>`}).join(''):
+    `<div class="ban ok">✅ Semua laporan hingga bulan lalu sudah terisi.</div>`;
+  chart&&chart.destroy();
+  chart=new Chart($('cv'),{type:'line',data:{labels:BLN.slice(a,b),datasets:[
+    {label:'Capaian',data:d.rows.slice(a,b).map(cap),borderColor:'#7c6fc4',backgroundColor:'#7c6fc4',tension:.25,spanGaps:false},
+    {label:'Target',data:d.rows.slice(a,b).map(r=>r.target),borderColor:'#f08a8a',backgroundColor:'#f08a8a',pointRadius:2}]},
+    options:{animation:false,responsive:true,maintainAspectRatio:false,scales:{y:{min:0,max:100,title:{display:true,text:'percent'}}}}});
+  $('rTab').innerHTML='<tr><th>Bulan</th><th>Num</th><th>Denum</th><th>Capaian %</th><th>Target</th><th>Analisa</th><th>Rencana Tindak Lanjut</th></tr>'+
+    d.rows.slice(a,b).map(r=>`<tr><td>${r.bulan}</td><td>${r.num}</td><td>${r.denum}</td><td>${cap(r)??''}</td><td>${r.target}</td><td>${esc(r.analisa)}</td><td>${esc(r.rtl)}</td></tr>`).join('');
+  $('rTri').innerHTML='<tr><th colspan="2">Analisa triwulan</th></tr>'+d.tri.map((t,i)=>t&&i*3>=a&&i*3<b?`<tr><td style="width:90px">Triwulan ${i+1}</td><td>${esc(t)}</td></tr>`:'').join('');
+}
+function renderTri(){$('tri').innerHTML=[0,1,2,3].map(q=>`<div><label>Triwulan ${q+1} (${BLN[q*3]}–${BLN[q*3+2]})</label>
+  <textarea id="t${q}" rows="7">${esc(S.d.tri[q])}</textarea>
+  <p><button class="btn" id="ai${q}" onclick="ai(${q})">✨ Analisa AI</button> <button class="btn alt" onclick="saveTri(${q})">Simpan</button></p></div>`).join('')}
+async function ai(q){const b=$('ai'+q);b.disabled=true;b.textContent='Menganalisa…';
+  try{$('t'+q).value=await api('aiTriwulan',S.unit,S.kode,q);toast('Hasil AI siap — periksa lalu Simpan')}catch(e){toast(e)}b.disabled=false;b.textContent='✨ Analisa AI'}
+async function saveTri(q){try{S.d=await api('saveTri',S.unit,S.kode,q,$('t'+q).value);renderAll();toast('Triwulan tersimpan')}catch(e){toast(e)}}
+
+function loadForm(){const r=S.d.rows[+$('fBln').value];
+  $('fNum').value=r.num;$('fDen').value=r.denum;$('fAn').value=r.analisa;$('fRtl').value=r.rtl;$('fPeng').checked=r.pengumpul;$('fPj').checked=r.pj;prev()}
+function prev(){const n=$('fNum').value,d=$('fDen').value;$('fCap').value=n!==''&&d>0?(Math.round(n/d*1000)/10)+' %':''}
+async function save(){const b=$('bSave');b.disabled=true;
+  try{const i=+$('fBln').value;S.d=await api('saveMonth',S.unit,S.kode,i,{num:$('fNum').value,denum:$('fDen').value,analisa:$('fAn').value,rtl:$('fRtl').value,pengumpul:$('fPeng').checked,pj:$('fPj').checked});
+    renderAll();toast('Data '+BLN[i]+' tersimpan')}catch(e){toast(e)}b.disabled=false}
+async function pdf(){
+  const d=S.d,T=d.tahun,[a,b,pl]=PERS[$('per').value],rows=d.rows.slice(a,b),W=642;
+  const cv=document.createElement('canvas');cv.width=W;cv.height=300;
+  const ch=new Chart(cv,{type:'line',data:{labels:BLN.slice(a,b),datasets:[
+    {label:'Capaian',data:rows.map(cap),borderColor:'#5b4fb0',backgroundColor:'#5b4fb0',tension:.2,spanGaps:false},
+    {label:'Target',data:rows.map(r=>r.target),borderColor:'#e05d5d',backgroundColor:'#e05d5d',pointRadius:2}]},
+    options:{responsive:false,animation:false,devicePixelRatio:2,layout:{padding:{top:18,right:16}},
+      scales:{y:{min:0,max:100,title:{display:true,text:'percent'}}}},
+    plugins:[{id:'lbl',afterDatasetsDraw(c){const x=c.ctx;x.save();x.font='11px Arial';x.fillStyle='#2e2a4f';x.textAlign='center';
+      c.getDatasetMeta(0).data.forEach((pt,i)=>{const v=c.data.datasets[0].data[i];if(v!=null)x.fillText(v,pt.x,pt.y-8)});x.restore()}}]});
+  const img=cv.toDataURL('image/png');ch.destroy();
+  const h=document.createElement('div');h.style.cssText=`width:${W}px;font-family:Arial,sans-serif;color:#000;background:#fff`;
+  const tri=d.tri.map((t,i)=>t&&i*3>=a&&i*3<b?`<tr><td style="width:80px"><b>Triwulan ${i+1}</b></td><td>${esc(t)}</td></tr>`:'').join('');
+  h.innerHTML=`<style>.pt{width:100%;border-collapse:collapse;font-size:10.5px;margin-top:10px}.pt th,.pt td{border:1px solid #444;padding:4px 5px;vertical-align:top}.pt th{background:#E6E6FA}.pt tr{page-break-inside:avoid}</style>
+  <div style="text-align:center;border-bottom:2px solid #7c6fc4;padding-bottom:6px;margin-bottom:10px">
+    <div style="font-size:16px;font-weight:700">${esc(d.judul.toUpperCase())}</div>
+    <div style="font-size:11px">${S.unit} • PIC: ${esc(d.pic||'-')} • ${pl} ${T}</div></div>
+  <img src="${img}" style="width:${W}px;height:300px;display:block">
+  <table class="pt"><tr><th style="width:42px">Bulan</th><th style="width:34px">Num</th><th style="width:40px">Denum</th><th style="width:52px">Capaian %</th><th style="width:38px">Target</th><th>Analisa</th><th>Rencana Tindak Lanjut</th></tr>`+
+  rows.map(r=>`<tr><td>${r.bulan}</td><td>${r.num}</td><td>${r.denum}</td><td>${cap(r)??''}</td><td>${r.target}</td><td>${esc(r.analisa)}</td><td>${esc(r.rtl)}</td></tr>`).join('')+`</table>`+
+  (tri?`<table class="pt"><tr><th colspan="2">Analisa triwulan</th></tr>${tri}</table>`:'');
+  html2pdf().set({margin:[15,25,15,15],filename:'Laporan-'+S.unit+'-'+pl.replace(/\s/g,'_')+'.pdf',
+    image:{type:'jpeg',quality:.98},html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+    pagebreak:{mode:['css','legacy'],avoid:['tr','img']}}).from(h).save()}
+
+async function showKep(){show('kep');$('kepList').textContent='Memuat…';
+  try{const k=await api('kepatuhan'),T=k.tahun,e=expected(T),now=new Date();
+    $('kepSub').textContent=`Tahun ${T} • batas input tanggal 10 bulan berikutnya`;
+    const grp={};k.units.forEach(u=>{const t=u.n.split('-')[0];(grp[t]=grp[t]||[]).push(u)});
+    let sum='';Object.keys(grp).forEach(t=>{const us=grp[t],tot=us.length*e,ok=us.reduce((a,u)=>a+u.f.slice(0,e).filter(Boolean).length,0),p=tot?Math.round(ok/tot*100):100;
+      sum+=`<div class="card" style="margin:0"><h2>${t}</h2><div style="font-size:2rem;font-weight:700">${p}%</div><div class="bar"><i style="width:${p}%"></i></div><span class="muted">${ok}/${tot} laporan terisi</span></div>`});
+    $('kepSum').innerHTML=sum;
+    $('kepList').innerHTML=k.units.map(u=>{const miss=u.f.map((f,m)=>({f,m})).filter(x=>x.m<e&&!x.f),p=e?Math.round((e-miss.length)/e*100):100;
+      return `<div style="margin-bottom:12px"><b>${u.n}</b> <span class="muted">${esc(u.j)}</span> — ${p}%<div class="bar"><i style="width:${p}%"></i></div>`+
+      miss.map(({m})=>`<span class="chip ${now>dl(T,m)?'late':''}">${BLN[m]}</span>`).join('')+'</div>'}).join('')}catch(e){toast(e)}}
+</script></body></html>
